@@ -9,26 +9,57 @@ from utils.helpers import Button
 class GameUI:
     def __init__(self, fonts: dict[str, pygame.font.Font]) -> None:
         self.fonts = fonts
-        self.minus_button = Button("-", pygame.Rect(280, 610, 56, 46))
-        self.plus_button = Button("+", pygame.Rect(430, 610, 56, 46))
-        self.start_button = Button("Iniciar rodada", pygame.Rect(520, 605, 180, 56))
-        self.confirm_button = Button("Confirmar", pygame.Rect(520, 605, 150, 56))
-        self.reset_button = Button("Nova rodada", pygame.Rect(520, 605, 170, 56))
+        self.minus_button = Button("-", pygame.Rect(280, 624, 56, 46))
+        self.plus_button = Button("+", pygame.Rect(430, 624, 56, 46))
+        self.start_button = Button("Iniciar rodada", pygame.Rect(520, 619, 180, 56))
+        self.confirm_button = Button("Confirmar", pygame.Rect(520, 619, 150, 56))
+        self.reset_button = Button("Nova rodada", pygame.Rect(520, 619, 170, 56))
 
-    def draw_header(self, surface: pygame.Surface, state: str, bet_count: int, kept_count: int, total_score: int, colors: dict[str, tuple[int, int, int]]) -> None:
+    @staticmethod
+    def format_money(value: float) -> str:
+        if float(value).is_integer():
+            return f"{int(value)} E$talecas"
+        return f"{value:.2f} E$talecas"
+
+    @staticmethod
+    def format_multiplier(value: float) -> str:
+        if float(value).is_integer():
+            return f"{int(value)}x"
+        return f"{value:.1f}x"
+
+    def draw_header(self, surface: pygame.Surface, state: str, bet_count: int, kept_count: int, total_score: float, balance: float, colors: dict[str, tuple[int, int, int]]) -> None:
         title = self.fonts["title"].render(settings.TITLE, True, colors["text"])
-        state_label = self.fonts["body"].render(f"Fase: {state}", True, colors["text"])
-        bet_label = self.fonts["body"].render(f"Bolas apostadas: {bet_count}", True, colors["text"])
-        kept_label = self.fonts["body"].render(f"Bolas mantidas: {kept_count}", True, colors["text"])
-        score_label = self.fonts["body"].render(f"Premio da rodada: {total_score}", True, colors["text"])
         hint = self.fonts["small"].render(settings.STATUS_TEXT[state], True, colors["muted"])
+        metrics = [
+            self.fonts["small"].render(f"Fase: {state}", True, colors["text"]),
+            self.fonts["small"].render(f"Bolas apostadas: {bet_count}", True, colors["text"]),
+            self.fonts["small"].render(f"Bolas mantidas: {kept_count}", True, colors["text"]),
+            self.fonts["small"].render(f"Premio da rodada: {self.format_money(total_score)}", True, colors["text"]),
+            self.fonts["small"].render(f"Saldo: {self.format_money(balance)}", True, colors["text"]),
+        ]
 
         surface.blit(title, (42, 26))
-        surface.blit(state_label, (610, 22))
-        surface.blit(bet_label, (610, 45))
-        surface.blit(kept_label, (780, 22))
-        surface.blit(score_label, (780, 45))
         surface.blit(hint, (44, 62))
+        for idx, metric in enumerate(metrics):
+            metric_rect = metric.get_rect(topright=(960, 28 + idx * 24))
+            surface.blit(metric, metric_rect)
+
+    def draw_result_summary(
+        self,
+        surface: pygame.Surface,
+        total_score: float,
+        multipliers: list[float],
+        colors: dict[str, tuple[int, int, int]],
+        top: int,
+    ) -> None:
+        summary_rect = pygame.Rect(42, top, 380, 48)
+        pygame.draw.rect(surface, colors["panel"], summary_rect, border_radius=18)
+        pygame.draw.rect(surface, colors["board_border"], summary_rect, width=2, border_radius=18)
+        total = self.fonts["body"].render(f"Total: {self.format_money(total_score)}", True, colors["text"])
+        values_text = ", ".join(self.format_multiplier(value) for value in multipliers) if multipliers else "0x"
+        details = self.fonts["small"].render(f"Multiplicadores das bolas mantidas: [{values_text}]", True, colors["muted"])
+        surface.blit(total, (60, top + 4))
+        surface.blit(details, (60, top + 26))
 
     def draw_footer(self, surface: pygame.Surface, state: str, bet_count: int, hovered_pos: tuple[int, int], colors: dict[str, tuple[int, int, int]]) -> None:
         instruction = ""
@@ -42,11 +73,11 @@ class GameUI:
             instruction = "Acompanhe a animacao e o resultado da rodada."
 
         text = self.fonts["body"].render(instruction, True, colors["text"])
-        surface.blit(text, (42, 610))
+        surface.blit(text, (42, 582))
 
         if state == "SELECT_BET":
             label = self.fonts["body"].render(str(bet_count), True, colors["text"])
-            surface.blit(label, label.get_rect(center=(383, 633)))
+            surface.blit(label, label.get_rect(center=(383, 647)))
             self.minus_button.enabled = bet_count > 1
             self.plus_button.enabled = bet_count < settings.MAX_BALLS
             self.start_button.enabled = 1 <= bet_count <= settings.MAX_BALLS
@@ -59,12 +90,3 @@ class GameUI:
         elif state == "ROUND_RESULT":
             self.reset_button.enabled = True
             self.reset_button.draw(surface, self.fonts["body"], colors, self.reset_button.rect.collidepoint(hovered_pos))
-
-    def draw_result_summary(self, surface: pygame.Surface, total_score: int, values: list[int], colors: dict[str, tuple[int, int, int]]) -> None:
-        summary_rect = pygame.Rect(42, 560, 380, 94)
-        pygame.draw.rect(surface, colors["panel"], summary_rect, border_radius=20)
-        pygame.draw.rect(surface, colors["board_border"], summary_rect, width=2, border_radius=20)
-        total = self.fonts["body"].render(f"Total: {total_score}", True, colors["text"])
-        details = self.fonts["small"].render(f"Valores das bolas mantidas: {values or [0]}", True, colors["muted"])
-        surface.blit(total, (64, 582))
-        surface.blit(details, (64, 613))

@@ -22,6 +22,8 @@ class Ball:
     reached_final: bool = False
     final_slot: int | None = None
     release_delay: float = 0.0
+    pin_collision_cooldown: float = 0.0
+    last_pin_collision: tuple[int, int] | None = None
     _path: list[tuple[float, float]] = field(default_factory=list)
     _path_index: int = 0
 
@@ -48,6 +50,11 @@ class Ball:
         self.state = "ABANDONED"
 
     def update(self, dt: float) -> None:
+        if self.pin_collision_cooldown > 0:
+            self.pin_collision_cooldown = max(0.0, self.pin_collision_cooldown - dt)
+            if self.pin_collision_cooldown == 0:
+                self.last_pin_collision = None
+
         if self.release_delay > 0:
             self.release_delay = max(0.0, self.release_delay - dt)
             return

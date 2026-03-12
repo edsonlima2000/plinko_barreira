@@ -103,7 +103,15 @@ class PlinkoGame:
             self.round_manager.result.bet_count or self.bet_count,
             self.round_manager.result.kept_count,
             self.round_manager.result.total_score,
+            self.round_manager.balance,
             settings.UI,
+        )
+        self.ui.draw_result_summary(
+            self.screen,
+            self.round_manager.result.total_score,
+            self.round_manager.result.slot_multipliers or [],
+            settings.UI,
+            98,
         )
 
         self.board.draw(self.screen, self.fonts, settings.UI)
@@ -113,11 +121,5 @@ class PlinkoGame:
             ball.draw(self.screen, settings.UI, self.fonts["small"])
 
         self.ui.draw_footer(self.screen, self.state, self.bet_count, hovered_pos, settings.UI)
-        self.ui.draw_result_summary(
-            self.screen,
-            self.round_manager.result.total_score,
-            self.round_manager.result.slot_values or [],
-            settings.UI,
-        )
 
         pygame.display.flip()

@@ -8,7 +8,7 @@ import pygame
 @dataclass
 class Slot:
     index: int
-    value: int
+    multiplier: float
     rect: pygame.Rect
 
     @property
@@ -19,7 +19,10 @@ class Slot:
         pygame.draw.rect(surface, colors["slot_fill"], self.rect)
         pygame.draw.rect(surface, colors["slot_line"], self.rect, width=2)
 
-        index_text = font.render(str(self.index + 1), True, colors["button_text"])
-        value_text = font.render(str(self.value), True, colors["button_text"])
-        surface.blit(index_text, index_text.get_rect(center=(self.rect.centerx, self.rect.y + 22)))
-        surface.blit(value_text, value_text.get_rect(center=(self.rect.centerx, self.rect.y + 54)))
+        multiplier_text = font.render(self._format_multiplier(), True, colors["button_text"])
+        surface.blit(multiplier_text, multiplier_text.get_rect(center=self.rect.center))
+
+    def _format_multiplier(self) -> str:
+        if self.multiplier.is_integer():
+            return f"{int(self.multiplier)}x"
+        return f"{self.multiplier:.1f}x"

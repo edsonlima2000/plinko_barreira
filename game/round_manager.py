@@ -13,8 +13,9 @@ class RoundResult:
     bet_count: int = 0
     kept_count: int = 0
     abandoned_count: int = 0
-    slot_values: list[int] | None = None
-    total_score: int = 0
+    base_points: float = 0.0
+    slot_multipliers: list[float] | None = None
+    total_score: float = 0.0
 
 
 class RoundManager:
@@ -23,16 +24,18 @@ class RoundManager:
         self.rng = random.Random()
         self.bet_count = settings.DEFAULT_BET
         self.balls: list[Ball] = []
-        self.result = RoundResult(slot_values=[])
+        self.balance = settings.STARTING_BALANCE
+        self.result = RoundResult(slot_multipliers=[])
         self._phase_two_slot_order: list[int] = []
 
     def reset(self) -> None:
         self.balls = []
-        self.result = RoundResult(slot_values=[])
+        self.result = RoundResult(slot_multipliers=[])
         self._phase_two_slot_order = []
 
     def start_round(self, bet_count: int) -> None:
         self.reset()
+        self.balance = settings.STARTING_BALANCE
         self.bet_count = bet_count
         spawn_x, spawn_y = self.board.get_spawn_point()
         paths = self.board.get_random_path_targets(self.rng, bet_count)
@@ -41,6 +44,7 @@ class RoundManager:
             ball.set_path(paths[idx], "FALLING_PHASE_1")
             self.balls.append(ball)
         self.result.bet_count = bet_count
+        self.result.base_points = self.balance
 
     def all_at_barrier(self) -> bool:
         return bool(self.balls) and all(ball.state == "AT_BARRIER" for ball in self.balls)
@@ -55,7 +59,7 @@ class RoundManager:
         for idx, ball in enumerate(kept):
             slot_index = self._phase_two_slot_order[idx]
             ball.final_slot = slot_index
-            ball.append_path(self.board.get_phase_two_targets(ball.x, slot_index), "FALLING_PHASE_2")
+            ball.append_path(self.board.get_phase_two_targets(ball.x, slot_index, self.rng), "FALLING_PHASE_2")
 
         self.result.kept_count = len(kept)
         self.result.abandoned_count = len(abandoned)
@@ -68,6 +72,8 @@ class RoundManager:
     def update(self, dt: float) -> None:
         for ball in self.balls:
             ball.update(dt)
+            self.board.apply_pin_collisions(ball)
+            ball.x = self.board.clamp_ball_position(ball.x, ball.radius)
 
     def finished(self) -> bool:
         if not self.balls:
@@ -75,14 +81,15 @@ class RoundManager:
         return all(ball.state in {"FINISHED", "ABANDONED"} for ball in self.balls)
 
     def calculate_result(self) -> RoundResult:
-        values: list[int] = []
+        multipliers: list[float] = []
         for ball in self.balls:
             if ball.final_slot is None or not ball.reached_final:
                 continue
             slot = self.board.slots[ball.final_slot]
-            values.append(slot.value)
-        self.result.slot_values = values
-        self.result.total_score = sum(values)
+            multipliers.append(slot.multiplier)
+        self.result.slot_multipliers = multipliers
+        self.result.total_score = round(sum(self.result.base_points * multiplier for multiplier in multipliers), 2)
+        self.balance = round(settings.STARTING_BALANCE + self.result.total_score, 2)
         return self.result
 
     def kept_count(self) -> int:
