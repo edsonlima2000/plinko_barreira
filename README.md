@@ -1,6 +1,6 @@
 # Plinko com Barreira
 
-Jogo desktop em Python com Pygame inspirado em Plinko. Em cada rodada, o jogador escolhe de 1 a 5 bolas, acompanha a primeira queda ate a barreira, decide quais bolas manter e recebe a pontuacao final com base no slot onde cada bola termina.
+Jogo desktop em Python com Pygame inspirado em Plinko. Em cada rodada, o jogador escolhe de 1 a 5 bolas, acompanha a queda ate a barreira, decide quais bolas continuam e recebe o resultado com base nos multiplicadores das canaletas finais.
 
 ## Requisitos
 
@@ -18,13 +18,13 @@ Se o ambiente ainda nao estiver ativo:
 ## Instalacao das dependencias
 
 ```powershell
-python -m pip install -r requirements.txt
+py -3 -m pip install -r requirements.txt
 ```
 
 ## Como executar
 
 ```powershell
-python main.py
+py -3 main.py
 ```
 
 ## Como jogar
@@ -34,15 +34,26 @@ python main.py
 3. Espere todas as bolas chegarem ate a barreira.
 4. Clique nas bolas que deseja manter.
 5. Clique em `Confirmar`.
-6. Veja o total da rodada e clique em `Nova rodada` para jogar novamente.
+6. Veja o premio da rodada e o saldo exibido na interface.
+7. Clique em `Nova rodada` para jogar novamente.
 
 ## Regras da rodada
 
 - Cada rodada permite apostar de 1 a 5 bolas.
+- Toda rodada comeca com `100 E$talecas`.
 - Todas as bolas param obrigatoriamente na barreira.
 - Bolas nao selecionadas sao abandonadas e nao pontuam.
-- Os slots finais possuem os valores `0, 1, 2, 3, 2, 1, 5`.
-- O premio final e a soma dos valores das bolas mantidas.
+- As bolas mantidas continuam pela metade inferior do tabuleiro, ainda atravessando pinos ate as canaletas.
+- Os multiplicadores finais sao `-1x`, `-0.5x`, `0x`, `0.5x`, `10x`, `100x` e `100x`.
+- O premio da rodada e a soma de `100 * multiplicador` para cada bola mantida que chega a uma canaleta.
+- Ao iniciar uma nova rodada, o valor base volta para `100 E$talecas`.
+
+## Interface atual
+
+- Cabecalho com fase atual, bolas apostadas, bolas mantidas, premio da rodada e saldo mostrado em `E$talecas`.
+- Placar da rodada logo abaixo do titulo, com o total e os multiplicadores obtidos.
+- Piramide de pinos ocupando a parte superior e inferior do tabuleiro, com a barreira cortando a estrutura no meio.
+- Canaletas finais exibindo apenas os multiplicadores, sem numeracao adicional.
 
 ## Estrutura do projeto
 
@@ -77,5 +88,5 @@ plinko_barreira/
 
 ## Observacoes
 
-- A animacao usa uma simulacao simplificada, com deslocamentos laterais suaves em vez de fisica completa.
+- A animacao usa uma simulacao simplificada, com trajetorias guiadas e desvios nos pinos em vez de fisica completa.
 - O projeto foi organizado para facilitar evolucoes futuras, como efeitos sonoros, melhorias visuais e novas regras.
